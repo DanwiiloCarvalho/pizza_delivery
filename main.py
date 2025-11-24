@@ -1,3 +1,4 @@
+from models import _all_models
 from fastapi import FastAPI
 from core.settings import settings
 from api.api import api_router
