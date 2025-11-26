@@ -10,7 +10,7 @@ from fastapi.exceptions import HTTPException
 import jwt
 
 
-def create_access_token(data: dict[str, any], expires_delta: timedelta | None = None) -> str:
+def create_token(data: dict[str, any], expires_delta: timedelta | None = None) -> str:
     data_to_encode = data.copy()
     now: datetime = datetime.now(tz=ZoneInfo("America/Sao_Paulo"))
 
