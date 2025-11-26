@@ -23,6 +23,7 @@ pydantic-settings==2.12.0
 pydantic_core==2.41.5
 PyJWT==2.10.1
 python-dotenv==1.2.1
+python-multipart==0.0.20
 sniffio==1.3.1
 SQLAlchemy==2.0.44
 SQLAlchemy-Utils==0.42.0
