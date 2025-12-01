@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, status
-from fastapi.exceptions import HTTPException
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.deps import get_session, get_current_user
-from schemas.order_schema import OrderSchema, OrderResponse
+from schemas.order_schema import OrderResponse
 from models.order import Order
 from models.user import User
 
@@ -18,15 +16,9 @@ router = APIRouter()
     description='Cria um pedido de usuário no Pizza Delivery',
     response_description='Retorna o pedido cadastrado'
 )
-async def create_order(new_order: OrderSchema, db: AsyncSession = Depends(get_session), user=Depends(get_current_user)):
-    query = select(User).filter(User.id == new_order.user_id)
-    user_found = (await db.execute(query)).unique().scalar_one_or_none()
+async def create_order(db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
+    order = Order(user_id=current_user.id)
 
-    if not user_found:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f'Usuário com ID {new_order.user_id} não encontrado.')
-
-    order = Order(user_id=new_order.user_id)
     db.add(order)
     await db.commit()
 
