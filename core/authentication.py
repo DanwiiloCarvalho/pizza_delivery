@@ -7,6 +7,7 @@ from core.settings import settings as stt
 from core.security import verify_password
 from fastapi import status
 from fastapi.exceptions import HTTPException
+from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 import jwt
 
 
@@ -34,3 +35,16 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> U
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='E-mail ou senha inválidos.')
     return user_found
+
+
+def verify_token(token: str):
+    try:
+        payload: dict[str, any] = jwt.decode(
+            jwt=token, algorithms=[stt.ALGORITHM], key=stt.SECRET_KEY)
+        return payload
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expirado")
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
