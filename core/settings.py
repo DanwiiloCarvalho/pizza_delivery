@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ALGORITHM: str
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: str
+    REFRESH_TOKEN_EXPIRE_DAYS: str
     POSTGRES_USER: str | None
     POSTGRES_DB: str | None
     POSTGRES_PASSWORD: str | None
