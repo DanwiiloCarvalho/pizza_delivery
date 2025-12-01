@@ -1,8 +1,11 @@
 from schemas.app_base_model import AppBaseModel
 
 
-class TokenSchema(AppBaseModel):
+class AccessTokenSchema(AppBaseModel):
     access_token: str
+
+
+class TokenSchema(AccessTokenSchema):
     refresh_token: str
     token_type: str
 
