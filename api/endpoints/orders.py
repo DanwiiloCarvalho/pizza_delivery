@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, asc
 from core.deps import get_session, get_current_user
 from schemas.order_schema import OrderResponse
 from schemas.order_status_enum import OrderStatusEnum
+from schemas.order_schema import OrderWithItemsResponse
 from models.order import Order
 from models.user import User
 
@@ -46,7 +47,26 @@ async def cancel_order(order_id: int, db: AsyncSession = Depends(get_session), c
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='Você não tem autorização para cancelar o pedido')
 
-    order.status = OrderStatusEnum.CANCELED  # Modificar a constante para o inglês
+    order.status = OrderStatusEnum.CANCELED
     await db.commit()
 
     return order
+
+
+@router.get(
+    '/',
+    status_code=status.HTTP_200_OK,
+    response_model=list[OrderResponse],
+    summary='Lista todos os pedidos',
+    description='Lista todos os pedidos do Pizza Delivery. Rota disponível apenas para usuários administrativos',
+    response_description='Retorna uma listagem com todos os pedidos do Pizza Delivery'
+)
+async def get_orders(db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
+    if not current_user.admin:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Usuário não autorizado')
+
+    query = select(Order).order_by(asc(Order.id))
+    orders: list[Order] = (await db.execute(query)).unique().scalars().all()
+
+    return orders
