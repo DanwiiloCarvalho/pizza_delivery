@@ -2,9 +2,10 @@ from schemas.app_base_model import AppBaseModel
 from pydantic import field_validator
 from decimal import Decimal
 from schemas.order_status_enum import OrderStatusEnum
+from schemas.order_item_schema import OrderItemResponseSchema
 
 
-class OrderResponse(AppBaseModel):
+class OrderResponseSchema(AppBaseModel):
     id: int
     user_id: int
     status: OrderStatusEnum
@@ -27,3 +28,7 @@ class OrderResponse(AppBaseModel):
         if total_price < 0:
             raise ValueError('O valor total do pedido não pode ser negativo.')
         return total_price
+
+
+class OrderWithItemsResponse(OrderResponseSchema):
+    order_items: list[OrderItemResponseSchema]
