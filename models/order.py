@@ -1,15 +1,8 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, Boolean, Numeric, ForeignKey
-# from sqlalchemy_utils.types import ChoiceType
+from sqlalchemy import Integer, String, Numeric, ForeignKey
 from core.settings import settings as stt
 from decimal import Decimal
 from typing import TYPE_CHECKING
-
-# ORDER_STATUS = [
-#     ('PENDENTE', 'PENDENTE'),
-#     ('CANCELADO', 'CANCELADO'),
-#     ('FINALIZADO', 'FINALIZADO')
-# ]
 
 if TYPE_CHECKING:
     from models.user import User
@@ -39,3 +32,7 @@ class Order(stt.DBBaseModel):
 
     def __repr__(self):
         return f'Status: {self.status}\nusuário: {self.user.name}'
+
+    def calculate_total_price(self):
+        self.total_price = sum(
+            order_item.quantity * order_item.unit_price for order_item in self.order_items)
