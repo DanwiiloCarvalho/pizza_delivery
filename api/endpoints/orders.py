@@ -30,7 +30,7 @@ async def create_order(db: AsyncSession = Depends(get_session), current_user: Us
 
 
 @router.patch(
-    '/{order_id}',
+    '/{order_id}/cancel',
     status_code=status.HTTP_200_OK,
     response_model=OrderResponseSchema,
     summary='Cancela um pedido',
