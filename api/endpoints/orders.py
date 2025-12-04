@@ -134,3 +134,29 @@ async def delete_order_item(order_id: int, item_id: int, db: AsyncSession = Depe
     await db.refresh(order)
     order.calculate_total_price()
     await db.commit()
+
+
+@router.patch(
+    '/{order_id}/complete',
+    status_code=status.HTTP_200_OK,
+    response_model=OrderResponseSchema,
+    summary='Finaliza um pedido',
+    description='Finaliza de um pedido, ou seja, altera o status para FINALIZADO de um pedido com ID especificado'
+)
+async def complete_order(order_id: int, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
+    query = select(Order).filter(Order.id == order_id)
+    order: Order = (await db.execute(query)).unique().scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f'Pedido de ID = {order_id} não encontrado')
+    if not current_user.admin and order.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Você não tem autorização para finalizar o pedido')
+    if order.status == OrderStatusEnum.CANCELED:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f'Não foi possível finalizar o pedido de ID = {order.id}. Pedido encontra-se cancelado')
+    order.status = OrderStatusEnum.COMPLETED
+    await db.commit()
+
+    return order
