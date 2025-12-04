@@ -28,7 +28,7 @@ class Order(stt.DBBaseModel):
     # Relationships
     user: Mapped['User'] = relationship(back_populates='orders', lazy='joined')
     order_items: Mapped[list['OrderItem']] = relationship(
-        back_populates='order', lazy='joined')
+        back_populates='order', lazy='joined', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'Status: {self.status}\nusuário: {self.user.name}'
