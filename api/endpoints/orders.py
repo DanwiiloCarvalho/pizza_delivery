@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, asc
 from core.deps import get_session, get_current_user
-from schemas.order_schema import OrderResponseSchema
+from schemas.order_schema import OrderResponseSchema, OrderWithItemsResponse
 from schemas.order_item_schema import OrderItemResponseSchema, OrderItemBaseSchema
 from schemas.order_status_enum import OrderStatusEnum
 from models.order import Order
@@ -57,7 +57,7 @@ async def cancel_order(order_id: int, db: AsyncSession = Depends(get_session), c
 @router.get(
     '/',
     status_code=status.HTTP_200_OK,
-    response_model=list[OrderResponseSchema],
+    response_model=list[OrderWithItemsResponse],
     summary='Lista todos os pedidos',
     description='Lista todos os pedidos do Pizza Delivery. Rota disponível apenas para usuários administrativos',
     response_description='Retorna uma listagem com todos os pedidos do Pizza Delivery'
@@ -105,3 +105,32 @@ async def add_order_item(order_id: int, item: OrderItemBaseSchema, db: AsyncSess
         return new_item
     raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                         detail=f'Não é possível adicionar itens a um pedido com status {order.status}.')
+
+
+@router.delete(
+    '/{order_id}/items/{item_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Remove um item de um pedido',
+    description='Remove um item de um pedido, especificando os IDs do pedido e do item'
+)
+async def delete_order_item(order_id: int, item_id: int, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
+    query = select(OrderItem).filter(OrderItem.id == item_id)
+    order_item: OrderItem = (await db.execute(query)).unique().scalar_one_or_none()
+
+    if not order_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f'Item de ID {item_id} não encontrado.')
+    if order_item.order_id != order_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f'O item especificado não pertence ao pedido de ID = {order_id}')
+
+    if not current_user.admin and order_item.order.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Você não tem autorização para adicionar o item ao pedido')
+
+    order = order_item.order
+    await db.delete(order_item)
+    await db.commit()
+    await db.refresh(order)
+    order.calculate_total_price()
+    await db.commit()

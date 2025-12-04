@@ -2,7 +2,7 @@ from schemas.app_base_model import AppBaseModel
 from pydantic import field_validator
 from decimal import Decimal
 from schemas.order_status_enum import OrderStatusEnum
-from schemas.order_item_schema import OrderItemResponseSchema
+from schemas.order_item_schema import OrderItemResponseSchema, OrderItemNoOrderId
 
 
 class OrderResponseSchema(AppBaseModel):
@@ -31,4 +31,4 @@ class OrderResponseSchema(AppBaseModel):
 
 
 class OrderWithItemsResponse(OrderResponseSchema):
-    order_items: list[OrderItemResponseSchema]
+    order_items: list[OrderItemNoOrderId]
