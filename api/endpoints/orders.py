@@ -162,3 +162,23 @@ async def complete_order(order_id: int, db: AsyncSession = Depends(get_session),
     await db.commit()
 
     return order
+
+
+@router.get(
+    '/{order_id}',
+    status_code=status.HTTP_200_OK,
+    response_model=OrderWithItemsResponse,
+    summary='Retorna um pedido',
+    description='Retorna um pedido de ID especificado, juntamente com a lista de itens desse pedido.'
+)
+async def get_order(order_id: int, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
+    query = select(Order).filter(Order.id == order_id)
+    order = (await db.execute(query)).unique().scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f'Pedido de ID = {order_id} não encontrado')
+    if not current_user.admin and order.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Você não tem autorização para visualizar o pedido')
+    return order
