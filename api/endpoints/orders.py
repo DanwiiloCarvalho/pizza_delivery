@@ -47,7 +47,9 @@ async def cancel_order(order_id: int, db: AsyncSession = Depends(get_session), c
     if not current_user.admin and order.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='Você não tem autorização para cancelar o pedido')
-
+    if order.status == OrderStatusEnum.COMPLETED:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f'Não foi possível cancelar o pedido de ID = {order.id}. Pedido encontra-se finalizado.')
     order.status = OrderStatusEnum.CANCELED
     await db.commit()
 
