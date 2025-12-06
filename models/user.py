@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, Boolean
+from sqlalchemy import Integer, String, Boolean, DateTime
+from sqlalchemy.sql import func
 from core.settings import settings as stt
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,6 +25,12 @@ class User(stt.DBBaseModel):
     active: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     admin: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now())
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     orders: Mapped[list['Order']] = relationship(

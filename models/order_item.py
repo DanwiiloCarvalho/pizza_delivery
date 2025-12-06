@@ -1,8 +1,10 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, Numeric, ForeignKey
+from sqlalchemy import Integer, String, Numeric, ForeignKey, DateTime
+from sqlalchemy.sql import func
 from core.settings import settings as stt
 from typing import TYPE_CHECKING
 from decimal import Decimal
+from datetime import datetime
 
 if TYPE_CHECKING:
     from models.order import Order
@@ -26,6 +28,12 @@ class OrderItem(stt.DBBaseModel):
 
     order_id: Mapped[int] = mapped_column(
         ForeignKey('orders.id'), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now())
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     order: Mapped['Order'] = relationship(

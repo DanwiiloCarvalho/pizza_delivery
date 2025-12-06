@@ -1,7 +1,9 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, Numeric, ForeignKey
+from sqlalchemy import Integer, String, Numeric, ForeignKey, DateTime
+from sqlalchemy.sql import func
 from core.settings import settings as stt
 from decimal import Decimal
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -24,6 +26,12 @@ class Order(stt.DBBaseModel):
 
     total_price: Mapped[Decimal] = mapped_column(
         Numeric(10, 2), nullable=False, default=0.00)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now())
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
     user: Mapped['User'] = relationship(back_populates='orders', lazy='joined')
