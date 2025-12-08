@@ -4,6 +4,7 @@ from core.settings import settings
 from api.api import api_router
 from pathlib import Path
 from fastapi.responses import HTMLResponse
+import sys
 
 app = FastAPI(
     title='Desafio Pizza Delivery',
@@ -18,11 +19,12 @@ app.include_router(router=api_router, prefix=settings.API_PREFIX)
 @app.get('/')
 def root():
     html_path: str = Path('index.html').read_text('utf-8')
-    html_path = html_path.replace('{__version__}', __version__)
+    html_path = html_path.replace('{__python__}', sys.version)
+    html_path = html_path.replace('{__fastapi__}', __version__)
     return HTMLResponse(content=html_path)
 
 
-if __name__ == '__main__':
-    import uvicorn
+# if __name__ == '__main__':
+#     import uvicorn
 
-    uvicorn.run(app='main:app', host='0.0.0.0', port=8000, reload=True)
+#     uvicorn.run(app='main:app', host='0.0.0.0', port=8000, reload=True)
