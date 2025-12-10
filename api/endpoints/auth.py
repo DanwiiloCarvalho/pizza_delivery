@@ -5,7 +5,6 @@ from sqlalchemy import select
 from core.deps import get_session, get_current_user
 from core.security import generate_hash
 from schemas.user_schema import RegisterUserSchema, BaseUserSchema
-from schemas.login_schema import LoginSchema
 from schemas.token_schema import TokenSchema, AccessTokenSchema
 from models.user import User
 from core.authentication import create_token, authenticate_user
