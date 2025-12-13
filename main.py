@@ -4,6 +4,7 @@ from core.settings import settings
 from api.api import api_router
 from pathlib import Path
 from fastapi.responses import HTMLResponse
+from exceptions.handlers import register_exception_handlers
 import sys
 
 app = FastAPI(
@@ -14,6 +15,7 @@ app = FastAPI(
     version='1.0.0'
 )
 app.include_router(router=api_router, prefix=settings.API_PREFIX)
+register_exception_handlers(app)
 
 
 @app.get('/')
