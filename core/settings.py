@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     POSTGRES_DB: str | None
     POSTGRES_PASSWORD: str | None
 
+    RABBITMQ_DEFAULT_USER: str
+    RABBITMQ_DEFAULT_PASS: str
+
+    CELERY_BROKER_URL: str
+
     model_config = SettingsConfigDict(case_sensitive=True, env_file='.env')
 
     class DBBaseModel(DeclarativeBase):
