@@ -6,3 +6,5 @@ vine==5.1.0
 python-dateutil==2.9.0.post0
 tzdata==2025.3
 python-dotenv==1.2.1
+psycopg2-binary==2.9.11
+SQLAlchemy==2.0.44

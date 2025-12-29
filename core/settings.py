@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     RABBITMQ_DEFAULT_PASS: str
 
     CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file='.env')
 
