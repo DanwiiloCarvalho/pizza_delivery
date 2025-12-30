@@ -12,6 +12,7 @@ from core.settings import settings as stt
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from typing import Annotated
+from common.tasks import send_email
 
 router = APIRouter()
 
@@ -44,6 +45,8 @@ async def create_account(new_user: RegisterUserSchema, db: AsyncSession = Depend
 
     db.add(user)
     await db.commit()
+    send_email.delay(new_user.name, new_user.email)
+
     return user
 
 
