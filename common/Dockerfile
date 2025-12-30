@@ -21,6 +21,7 @@ RUN useradd -m workeruser
 COPY ./common/worker-requirements.txt .
 RUN pip install --no-cache-dir -r worker-requirements.txt
 COPY ./common/celery_app.py ./common/
+COPY ./common/welcome.html ./common/
 COPY ./common/tasks.py ./common/
 
 RUN chown -R workeruser ./common
