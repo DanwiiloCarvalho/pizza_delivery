@@ -1,38 +1,41 @@
 from httpx import AsyncClient
 from fastapi import status
 from core.settings import settings
+from unittest.mock import patch
 import pytest
 
 
 @pytest.mark.integration
 async def test_create_account_success(client: AsyncClient):
-    response = await client.post(
-        f'{settings.API_PREFIX}/auth/create_account',
-        json={
-            'name': 'João',
-            'email': 'joao@outlook.com',
-            'password': '#Apipadoxandaonaosobemais1'
-        }
-    )
+    with patch('api.endpoints.auth.send_email.delay') as mock_delay:
+        response = await client.post(
+            f'{settings.API_PREFIX}/auth/create_account',
+            json={
+                'name': 'João',
+                'email': 'joao@genericemail.com',
+                'password': '#Apipadoxandaonaosobemais1'
+            }
+        )
 
-    body = response.json()
+        body = response.json()
 
-    assert response.status_code == status.HTTP_201_CREATED
-    assert 'id' in body
-    assert isinstance(body['id'], int)
-    assert body['name'] == 'João'
-    assert body['email'] == 'joao@outlook.com'
+        assert response.status_code == status.HTTP_201_CREATED
+        assert 'id' in body
+        assert isinstance(body['id'], int)
+        assert body['name'] == 'João'
+        assert body['email'] == 'joao@genericemail.com'
+        mock_delay.assert_called_with('João', 'joao@genericemail.com')
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize(
     'email',
     [
-        'joaooutlook.com',
-        'joaooutlookcom',
-        'joao@outlook',
-        'joao@outlook.com.',
-        '.joao@outlook.com'
+        'joaogenericemail.com',
+        'joaogenericemailcom',
+        'joao@genericemail',
+        'joao@genericemail.com.',
+        '.joao@genericemail.com'
     ]
 )
 async def test_create_account_invalid_email(client: AsyncClient, email):
@@ -69,7 +72,7 @@ async def test_create_account_invalid_password(client: AsyncClient, password: st
         f'{settings.API_PREFIX}/auth/create_account',
         json={
             'name': 'João',
-            'email': 'joao@outlook.com',
+            'email': 'joao@genericemail.com',
             'password': password
         }
     )
@@ -93,7 +96,7 @@ async def test_create_account_duplicate_email(client: AsyncClient):
         f'{settings.API_PREFIX}/auth/create_account',
         json={
             'name': 'João',
-            'email': 'joao@outlook.com',
+            'email': 'joao@genericemail.com',
             'password': '#Apipadoxandaonaosobemais1'
         }
     )
@@ -102,7 +105,7 @@ async def test_create_account_duplicate_email(client: AsyncClient):
         f'{settings.API_PREFIX}/auth/create_account',
         json={
             'name': 'Felipe',
-            'email': 'joao@outlook.com',
+            'email': 'joao@genericemail.com',
             'password': '#Apipadoxandaonaosobemais1'
         }
     )
