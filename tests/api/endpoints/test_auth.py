@@ -12,7 +12,7 @@ async def test_create_account_success(client: AsyncClient):
             f'{settings.API_PREFIX}/auth/create_account',
             json={
                 'name': 'João',
-                'email': 'joao@genericemail.com',
+                'email': 'joao_success@genericemail.com',
                 'password': '#Apipadoxandaonaosobemais1'
             }
         )
@@ -23,8 +23,8 @@ async def test_create_account_success(client: AsyncClient):
         assert 'id' in body
         assert isinstance(body['id'], int)
         assert body['name'] == 'João'
-        assert body['email'] == 'joao@genericemail.com'
-        mock_delay.assert_called_with('João', 'joao@genericemail.com')
+        assert body['email'] == 'joao_success@genericemail.com'
+        mock_delay.assert_called_with('João', 'joao_success@genericemail.com')
 
 
 @pytest.mark.integration
@@ -92,23 +92,25 @@ async def test_create_account_invalid_password(client: AsyncClient, password: st
 
 @pytest.mark.integration_duplicate_email
 async def test_create_account_duplicate_email(client: AsyncClient):
-    await client.post(
-        f'{settings.API_PREFIX}/auth/create_account',
-        json={
-            'name': 'João',
-            'email': 'joao@genericemail.com',
-            'password': '#Apipadoxandaonaosobemais1'
-        }
-    )
+    with patch('api.endpoints.auth.send_email.delay'):
+        response_create = await client.post(
+            f'{settings.API_PREFIX}/auth/create_account',
+            json={
+                'name': 'João',
+                'email': 'joao_duplicate@genericemail.com',
+                'password': '#Apipadoxandaonaosobemais1'
+            }
+        )
+        assert response_create.status_code == status.HTTP_201_CREATED
 
-    response = await client.post(
-        f'{settings.API_PREFIX}/auth/create_account',
-        json={
-            'name': 'Felipe',
-            'email': 'joao@genericemail.com',
-            'password': '#Apipadoxandaonaosobemais1'
-        }
-    )
+        response = await client.post(
+            f'{settings.API_PREFIX}/auth/create_account',
+            json={
+                'name': 'Felipe',
+                'email': 'joao_duplicate@genericemail.com',
+                'password': '#Apipadoxandaonaosobemais1'
+            }
+        )
     body = response.json()
     assert response.status_code == status.HTTP_409_CONFLICT
     assert 'detail' in body
