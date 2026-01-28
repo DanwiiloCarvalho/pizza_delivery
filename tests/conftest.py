@@ -6,9 +6,9 @@ from contextvars import ContextVar, Token
 from main import app
 from core.settings import settings as stt
 from core.deps import get_session
+import os
 
-
-TEST_SQLALCHEMY_DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
+TEST_SQLALCHEMY_DATABASE_URL = os.getenv('TEST_SQLALCHEMY_DATABASE_URL')
 
 test_session_context: ContextVar[AsyncSession] = ContextVar(
     'test_session_context')
@@ -23,10 +23,14 @@ async def db_session():
     async with test_async_engine.begin() as conn:
         await conn.run_sync(stt.DBBaseModel.metadata.create_all)
 
-    async with Session() as session:
-        token: Token[AsyncSession] = test_session_context.set(session)
-        yield session
-        test_session_context.reset(token)
+    async with test_async_engine.connect() as conn:
+        transaction = await conn.begin()
+
+        async with Session(bind=conn) as session:
+            token: Token[AsyncSession] = test_session_context.set(session)
+            yield session
+            test_session_context.reset(token)
+        await transaction.rollback()
 
     await test_async_engine.dispose()
 

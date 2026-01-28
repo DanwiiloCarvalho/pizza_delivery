@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
 
+    TEST_SQLALCHEMY_DATABASE_URL: str | None = None
+
     model_config = SettingsConfigDict(case_sensitive=True, env_file='.env')
 
     class DBBaseModel(DeclarativeBase):

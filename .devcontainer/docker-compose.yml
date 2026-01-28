@@ -93,9 +93,23 @@ services:
     depends_on:
       - rabbitmq
 
+  test_db:
+    image: postgres:17-alpine
+    volumes:
+      - postgres-test:/var/lib/postgresql/data
+    env_file:
+      - "../.test_database.env"
+    container_name: test_database
+    ports:
+      - "3000:5432"
+    networks:
+      - default
+
+
 volumes:
   postgres-data:
   worker-data:
+  postgres-test:
 
 networks:
   default:
