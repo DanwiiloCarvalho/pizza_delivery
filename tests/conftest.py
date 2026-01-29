@@ -6,9 +6,8 @@ from contextvars import ContextVar, Token
 from main import app
 from core.settings import settings as stt
 from core.deps import get_session
-import os
 
-TEST_SQLALCHEMY_DATABASE_URL = os.getenv('TEST_SQLALCHEMY_DATABASE_URL')
+TEST_SQLALCHEMY_DATABASE_URL = stt.TEST_SQLALCHEMY_DATABASE_URL
 
 test_session_context: ContextVar[AsyncSession] = ContextVar(
     'test_session_context')
