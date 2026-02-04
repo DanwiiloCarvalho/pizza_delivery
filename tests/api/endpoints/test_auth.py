@@ -2,59 +2,92 @@ from httpx import AsyncClient
 from fastapi import status
 from core.settings import settings
 from unittest.mock import patch
+from hypothesis import given, strategies as st, settings as hypothesis_settings
+from tests.conftest import db_session_context, client_context
+import string
 import pytest
 
 
+@hypothesis_settings(deadline=None, max_examples=20)
 @pytest.mark.integration
-async def test_create_account_success(client: AsyncClient):
-    with patch('api.endpoints.auth.send_email.delay') as mock_delay:
-        response = await client.post(
-            f'{settings.API_PREFIX}/auth/create_account',
-            json={
-                'name': 'João',
-                'email': 'joao_success@genericemail.com',
-                'password': '#Apipadoxandaonaosobemais1'
-            }
-        )
-
-        body = response.json()
-
-        assert response.status_code == status.HTTP_201_CREATED
-        assert 'id' in body
-        assert isinstance(body['id'], int)
-        assert body['name'] == 'João'
-        assert body['email'] == 'joao_success@genericemail.com'
-        mock_delay.assert_called_with('João', 'joao_success@genericemail.com')
-
-
-@pytest.mark.integration
-@pytest.mark.parametrize(
-    'email',
-    [
-        'joaogenericemail.com',
-        'joaogenericemailcom',
-        'joao@genericemail',
-        'joao@genericemail.com.',
-        '.joao@genericemail.com'
-    ]
+@given(
+    name=st.text(min_size=3, max_size=16,
+                 alphabet=string.ascii_letters + string.digits),
+    unique_id=st.uuids()
 )
-async def test_create_account_invalid_email(client: AsyncClient, email):
-    response = await client.post(
-        f'{settings.API_PREFIX}/auth/create_account',
-        json={
-            'name': 'João',
-            'email': email,
-            'password': '#Apipadoxandaonaosobemais1'
-        }
+async def test_create_account_success(name: str, unique_id):
+    email = f'joao_success_{unique_id}@genericemail.com'
+    async with db_session_context() as session:
+        async with client_context(session) as c:
+            with patch('api.endpoints.auth.send_email.delay') as mock_delay:
+                response = await c.post(
+                    f'{settings.API_PREFIX}/auth/create_account',
+                    json={
+                        'name': name,
+                        'email': email,
+                        'password': '#Apipadoxandaonaosobemais1'
+                    }
+                )
+
+                body = response.json()
+
+                assert response.status_code == status.HTTP_201_CREATED, f'Nome {name} e E-mail {email} não cadastrado'
+                assert 'id' in body
+                assert isinstance(body['id'], int)
+                assert body['name'] == name
+                assert body['email'] == email
+                mock_delay.assert_called_with(name, email)
+
+
+@hypothesis_settings(deadline=None, max_examples=20)
+@pytest.mark.integration
+@given(
+    email=st.one_of(
+        st.text(min_size=1).filter(lambda x: '@' not in x),
+
+        # 2. Ausência de domínio (ex: user@)
+        st.text(min_size=1, alphabet=st.characters(
+            whitelist_categories=('L', 'N')))
+        .map(lambda x: f"{x}@"),
+
+        # 3. Ausência de usuário (ex: @domain.com)
+        st.text(min_size=1, alphabet=st.characters(
+            whitelist_categories=('L', 'N')))
+        .map(lambda x: f"@{x}.com"),
+
+        # 4. Múltiplos símbolos '@' (ex: user@@domain.com)
+        st.tuples(st.text(min_size=1), st.text(min_size=1))
+        .map(lambda x: f"{x[0]}@@{x[1]}.com"),
+
+        # 5. Caracteres proibidos no domínio (ex: user@dom!ain.com)
+        st.just("user@dom!ain.com"),
+
+        # 6. Domínio sem ponto (ex: user@domain)
+        st.text(min_size=1).map(lambda x: f"{x}@domain"),
+
+        # 7. Espaços em branco (ex: user @domain.com)
+        st.text(min_size=1).map(lambda x: f"{x} @example.com")
     )
+)
+async def test_create_account_invalid_email(email):
+    async with db_session_context() as session:
+        async with client_context(session) as c:
+            response = await c.post(
+                f'{settings.API_PREFIX}/auth/create_account',
+                json={
+                    'name': 'João',
+                    'email': email,
+                    'password': '#Apipadoxandaonaosobemais1'
+                }
+            )
 
-    body = response.json()
+            body = response.json()
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
-    assert 'detail' in body
-    assert 'loc' in body['detail'][0]
-    assert body['detail'][0]['loc'] == ['body', 'email']
-    assert body['detail'][0]['type'] == 'value_error'
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+            assert 'detail' in body
+            assert 'loc' in body['detail'][0]
+            assert body['detail'][0]['loc'] == ['body', 'email']
+            assert body['detail'][0]['type'] == 'value_error'
 
 
 @pytest.mark.integration
