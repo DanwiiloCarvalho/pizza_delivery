@@ -81,7 +81,6 @@ services:
       - "5000:5432"
     networks:
       - default
-    
 
   flower:
     image: mher/flower:2.0
@@ -105,11 +104,23 @@ services:
     networks:
       - default
 
+  locust_db:
+    image: postgres:17-alpine
+    volumes:
+      - postgres-locust:/var/lib/postgresql/data
+    env_file:
+      - "../.locust.env"
+    container_name: locust_database
+    ports:
+      - "4000:5432"
+    networks:
+      - default
 
 volumes:
   postgres-data:
   worker-data:
   postgres-test:
+  postgres-locust:
 
 networks:
   default:
