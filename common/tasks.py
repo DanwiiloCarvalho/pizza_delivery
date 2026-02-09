@@ -11,10 +11,14 @@ email_user: str = os.getenv(key='EMAIL_USER')
 email_password: str = os.getenv(key='EMAIL_PASSWORD')
 smtp_host: str = os.getenv(key='SMTP_HOST')
 smtp_port: str = os.getenv(key='SMTP_PORT')
+send_emails: str = str(os.getenv(key='SEND_EMAILS')).lower() == 'true'
 
 
 @celery_app.task
 def send_email(username: str, email: str):
+    if not send_emails:
+        return 'Email skipped (load test mode)'
+
     email_msg = MIMEMultipart('alternative')
 
     email_msg["From"] = email_user
