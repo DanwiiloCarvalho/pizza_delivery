@@ -124,27 +124,28 @@ async def test_create_account_invalid_password(client: AsyncClient, password: st
 
 
 @pytest.mark.integration_duplicate_email
-async def test_create_account_duplicate_email(client: AsyncClient):
+async def test_create_account_duplicate_email(client: AsyncClient, db_session):
     with patch('api.endpoints.auth.send_email.delay'):
-        response_create = await client.post(
-            f'{settings.API_PREFIX}/auth/create_account',
-            json={
-                'name': 'João',
-                'email': 'joao_duplicate@genericemail.com',
-                'password': '#Apipadoxandaonaosobemais1'
-            }
-        )
-        assert response_create.status_code == status.HTTP_201_CREATED
+        email: str = 'joao_duplicate@genericemail.com'
+        from tests.factories.user_builder import UserBuilder
+        async with db_session:
+            user = (
+                await UserBuilder(db_session)
+                .set_email(email=email)
+                .build()
+            )
+
+        assert user.active is True
 
         response = await client.post(
             f'{settings.API_PREFIX}/auth/create_account',
             json={
                 'name': 'Felipe',
-                'email': 'joao_duplicate@genericemail.com',
+                'email': email,
                 'password': '#Apipadoxandaonaosobemais1'
             }
         )
     body = response.json()
-    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.status_code == status.HTTP_409_CONFLICT, f'E-mail cadastrado era {user.email}'
     assert 'detail' in body
     assert isinstance(body['detail'], str) is True
