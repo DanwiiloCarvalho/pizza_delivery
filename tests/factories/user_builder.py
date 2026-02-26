@@ -8,7 +8,7 @@ class UserBuilder:
         self.email: str
         self._active = True
         self._admin = False
-        self._password: str
+        self._password: str = None
 
     def inactive(self):
         self._active = False
@@ -27,7 +27,13 @@ class UserBuilder:
         return self
 
     async def build(self) -> UserFactory:
-        user = UserFactory(email=self._email)
+        kwargs = {'email': self._email,
+                  'active': self._active, 'admin': self._admin}
+
+        if self._password:
+            kwargs['password'] = self._password
+
+        user = UserFactory(**kwargs)
 
         self.session.add(user)
         await self.session.commit()
