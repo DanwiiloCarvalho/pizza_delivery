@@ -4,6 +4,7 @@ from core.settings import settings
 from unittest.mock import patch
 from hypothesis import given, strategies as st, settings as hypothesis_settings
 from tests.conftest import db_session_context, client_context
+from tests.factories.user_builder import UserBuilder
 import string
 import pytest
 
@@ -127,7 +128,7 @@ async def test_create_account_invalid_password(client: AsyncClient, password: st
 async def test_create_account_duplicate_email(client: AsyncClient, db_session):
     with patch('api.endpoints.auth.send_email.delay'):
         email: str = 'joao_duplicate@genericemail.com'
-        from tests.factories.user_builder import UserBuilder
+
         async with db_session:
             user = (
                 await UserBuilder(db_session)
@@ -149,3 +150,44 @@ async def test_create_account_duplicate_email(client: AsyncClient, db_session):
     assert response.status_code == status.HTTP_409_CONFLICT, f'E-mail cadastrado era {user.email}'
     assert 'detail' in body
     assert isinstance(body['detail'], str) is True
+
+
+@pytest.mark.integration_login
+@pytest.mark.parametrize(
+    'email, password',
+    [
+        ('felipe@teste.com', '#Apipadoxandaonaosobemais1')
+    ]
+)
+async def test_login_success(client: AsyncClient, db_session, email, password):
+    from pwdlib import PasswordHash
+    password_hash: PasswordHash = PasswordHash.recommended()
+    hashed_password = password_hash.hash(password)
+
+    async with db_session:
+        user = (
+            await UserBuilder(db_session)
+            .set_email(email)
+            .set_password(hashed_password)
+            .build()
+        )
+
+    data = {
+        'username': email,
+        'password': password
+    }
+    response = await client.post(
+        f'{settings.API_PREFIX}/auth/login',
+        data=data
+    )
+
+    body = response.json()
+    assert response.status_code == status.HTTP_200_OK
+    assert 'token_type' in body
+    assert body['token_type'] == 'bearer'
+    assert 'access_token' in body
+    assert isinstance(body['access_token'], str)
+    assert body['access_token']
+    assert 'refresh_token' in body
+    assert isinstance(body['refresh_token'], str)
+    assert body['refresh_token']
