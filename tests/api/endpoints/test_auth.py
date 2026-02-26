@@ -5,6 +5,7 @@ from unittest.mock import patch
 from hypothesis import given, strategies as st, settings as hypothesis_settings
 from tests.conftest import db_session_context, client_context
 from tests.factories.user_builder import UserBuilder
+from pwdlib import PasswordHash
 import string
 import pytest
 
@@ -160,7 +161,6 @@ async def test_create_account_duplicate_email(client: AsyncClient, db_session):
     ]
 )
 async def test_login_success(client: AsyncClient, db_session, email, password):
-    from pwdlib import PasswordHash
     password_hash: PasswordHash = PasswordHash.recommended()
     hashed_password = password_hash.hash(password)
 
@@ -191,3 +191,39 @@ async def test_login_success(client: AsyncClient, db_session, email, password):
     assert 'refresh_token' in body
     assert isinstance(body['refresh_token'], str)
     assert body['refresh_token']
+
+
+@pytest.mark.integration_login
+@pytest.mark.parametrize(
+    'email, password',
+    [
+        ('felipe@teste.com', '#Apipadoxandaonaosobemais'),
+        ('teste@teste.com', '#Apipadoxandaonaosobemais1')
+    ]
+)
+async def test_login_fails_with_invalid_credentials(client: AsyncClient, db_session, email, password):
+    password_hash: PasswordHash = PasswordHash.recommended()
+    hashed_password = password_hash.hash('#Apipadoxandaonaosobemais1')
+
+    async with db_session:
+        user = (
+            await UserBuilder(db_session)
+            .set_email('felipe@teste.com')
+            .set_password(hashed_password)
+            .build()
+        )
+
+    data = {
+        'username': email,
+        'password': password
+    }
+
+    response = await client.post(
+        f'{settings.API_PREFIX}/auth/login',
+        data=data
+    )
+
+    body = response.json()
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert 'detail' in body
+    assert 'inválidos' in body['detail']
