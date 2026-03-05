@@ -27,11 +27,20 @@ jobs:
           --health-retries 5
 
     env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/pizza_delivery
       TEST_SQLALCHEMY_DATABASE_URL: ${{ secrets.TEST_SQLALCHEMY_DATABASE_URL }}
       CELERY_RESULT_BACKEND: db+postgresql://celery:celery@worker_backend:5432/celery_results
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      API_PREFIX: /api
+      ALGORITHM: ${{ secrets.ALGORITHM }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
 
     steps:
       - name: Checkout code
