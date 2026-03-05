@@ -28,6 +28,10 @@ jobs:
 
     env:
       TEST_SQLALCHEMY_DATABASE_URL: ${{ secrets.TEST_SQLALCHEMY_DATABASE_URL }}
+      CELERY_RESULT_BACKEND: db+postgresql://celery:celery@worker_backend:5432/celery_results
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
 
     steps:
       - name: Checkout code
